@@ -11,6 +11,7 @@ import (
 	"github.com/mercadolibre/golang-restclient/rest"
 
 	"github.com/dibrito/book-store-oauth-go/errors"
+	"github.com/dibrito/bookstore-users-api/logger"
 )
 
 const (
@@ -24,7 +25,7 @@ const (
 var (
 	oauthRestClient = rest.RequestBuilder{
 		Timeout: 200 * time.Millisecond,
-		BaseURL: "https://api.bookstore.com/",
+		BaseURL: "http://localhost:8080",
 	}
 )
 
@@ -71,6 +72,7 @@ func IsPublic(req *http.Request) bool {
 }
 
 func AuthenticateRequest(req *http.Request) *errors.RestErr {
+	logger.Info("AuthenticateRequest")
 	if req == nil {
 		return nil
 	}
@@ -80,8 +82,12 @@ func AuthenticateRequest(req *http.Request) *errors.RestErr {
 	if accessTokenID == "" {
 		return nil
 	}
+	logger.Info(fmt.Sprintf("accessTokenID:%v", accessTokenID))
 	at, err := getAccessToken(accessTokenID)
 	if err != nil {
+		if err.Status == http.StatusNotFound {
+			return nil
+		}
 		return err
 	}
 	req.Header.Add(headerXCallerID, fmt.Sprintf("%v", at.UserId))
